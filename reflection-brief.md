@@ -1,4 +1,4 @@
-# Reflection Brief — Harness Engineering Capstone
+# Reflection Brief — Harness Engineering Project
 
 **Name:** Stanley Lo
 **Date:** 31/07/2026
