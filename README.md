@@ -1,4 +1,4 @@
-# Capstone — Harness Engineering with Claude and Claude Code
+# Project: Harness Engineering with Claude and Claude Code
 
 Submission for the Harness Engineering capstone: four completed reference systems from the course, each built, run, and verified end-to-end, plus an evidence-grounded reflection brief.
 
