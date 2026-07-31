@@ -1,9 +1,7 @@
 # Reflection Brief — Harness Engineering Capstone
 
-**Name:** Lo Kai Cheung, Stanley
+**Name:** Stanley Lo
 **Date:** 31/07/2026
-
-Replace each `→` with your answer. **Every answer cites at least one artifact from your own runs** — a run ID, file path, token count, claim outcome, or test count. Uncited answers do not pass. 3–6 sentences each unless noted. Paste short artifact snippets where they help.
 
 **Environment**
 
