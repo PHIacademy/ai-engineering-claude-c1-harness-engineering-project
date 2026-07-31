@@ -1,0 +1,247 @@
+.claude/commands/review.md
+.claude/rules/api.md
+.claude/rules/react.md
+.claude/rules/tests.md
+.claude/skills/deploy-check/SKILL.md
+.claude/standards/api.md
+.claude/standards/database.md
+.claude/standards/frontend.md
+.claude/standards/testing.md
+---
+description: Conventions for Node.js API handlers
+paths:
+  - "src/api/**/*"
+---
+
+# API handler rules
+
+Loads when editing any file under `src/api/`.
+
+## Handler signature
+
+- Every handler is `async function handle(req: ApiRequest<TBody>): Promise<ApiResponse<TOut>>`. The framework adapter does the actual response write — handlers never call `res.send`.
+- The `TBody` and `TOut` type parameters come from the schemas in `src/api/_schemas/`. Inline anonymous types here are not allowed.
+
+## Error handling
+
+- Throw `new ApiError(400, "VALIDATION_FAILED", "...")` for validation errors. Do not return a `{ status: 400 }` shape — let the middleware translate the throw.
+- For not-found: `throw new ApiError(404, "NOT_FOUND", "...")`. Never return `{ status: 404, body: null }`.
+- For unexpected failures: let the exception propagate. Do not catch-log-rethrow without adding context.
+
+## Database access
+
+- Handlers depend on functions exported from `src/db/<table>.ts`. They must not import `pool` or `prisma` directly.
+- Multi-write operations must wrap in `withTransaction(async (tx) => { ... })` from `src/db/tx.ts`.
+
+## Input validation
+
+- Validate the request body with `bodySchema.parse(req.body)` at the very top of the handler, before any other work.
+- Do not re-validate the parsed body downstream — once it has passed `parse`, trust the type.
+
+## Logging
+
+- Use the request-scoped logger `req.log.info({ field: value }, "message")`. Bare `console.log` is forbidden in `src/api/`.
+- Log levels: `debug` for development hints, `info` for normal request milestones, `warn` for recoverable issues, `error` for caught exceptions only.
+---
+description: Conventions for React components and pages
+paths:
+  - "src/components/**/*"
+  - "src/pages/**/*"
+---
+
+# React component & page rules
+
+Loads when editing any file under `src/components/` or `src/pages/`.
+
+## Imports
+
+- Import React types as `import type { ... } from "react"` — never mixed with value imports. This keeps the dead-code-elimination boundary obvious.
+- App-internal imports use the `@/` alias (resolved by Vite). Relative `../../../foo` paths are a code smell — promote the shared module instead.
+
+## Component shape
+
+- One default export per file, named to match the filename (`Cart.tsx` exports `Cart`).
+- Props go through an `interface FooProps` declared in the same file. Do not spread arbitrary HTML attributes onto components — list the props you accept.
+- Always destructure props in the function signature: `function Cart({ items, onCheckout }: CartProps)`.
+
+## Hooks within components
+
+- Custom hooks called inside the component body, top-level only — no hooks inside conditions, loops, or callbacks.
+- When a component grows past ~150 lines, extract logic into a custom hook in `src/hooks/` before adding another `useState`.
+
+## Accessibility
+
+- Interactive elements use semantic tags (`button`, `a`, `label`). Do not put `onClick` on a `div` to make a clickable element.
+- All images have a real `alt` attribute. Decorative images get `alt=""` explicitly, not omitted.
+
+## Forbidden
+
+- `dangerouslySetInnerHTML` — if you think you need it, talk to a senior engineer first.
+- `useLayoutEffect` outside of `src/hooks/` — almost always `useEffect` is what you actually want.
+---
+description: Conventions for test files (co-located *.test.ts and *.test.tsx)
+paths:
+  - "**/*.test.tsx"
+  - "**/*.test.ts"
+---
+
+# Test file rules
+
+Loads when editing any co-located test file anywhere in the tree. Applies on top of the React or API rules when the file under test sits in those directories.
+
+## Structure
+
+- One top-level `describe` per file, named after the unit under test (`describe("Cart", () => { ... })`).
+- Group related cases with nested `describe`. Avoid deeper than 2 nesting levels.
+- Each `it("...")` description starts with a verb and describes observable behavior: `it("disables checkout when cart is empty")`, not `it("works")`.
+
+## Assertions
+
+- Use `expect(...).toBe(...)` for primitives, `toEqual` for objects/arrays. Never `toBeTruthy()` on a value where the exact shape matters.
+- Prefer one assertion per case. If a test needs four `expect` calls, it is probably four tests.
+
+## Test data
+
+- Build domain objects via the factories in `src/test/factories/` (e.g. `aCart({ items: [...] })`). Inline literal objects make refactors painful.
+- Time-sensitive assertions use the `freezeTime("2026-01-15T10:00:00Z")` helper. Real `Date.now()` is forbidden in tests.
+
+## Forbidden
+
+- Snapshot tests for component output — they pass for the wrong reasons and rot silently.
+- Mocking the database layer in repository tests. Hit the real test PostgreSQL instance via the Docker Compose fixture.
+- `setTimeout` / `setInterval` in tests. Use `vi.useFakeTimers()` and advance explicitly.
+
+## Coverage expectations
+
+- New behavior requires at least one test covering the happy path and one covering an explicit edge case (empty input, max boundary, error state). PRs without both will be flagged by `/review`.
+---
+description: Run the e-commerce team's PR review checklist against a pull request or local diff
+argument-hint: <pr-number | "HEAD~1..HEAD" | path/to/file>
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash(git diff:*)
+  - Bash(git log:*)
+  - Bash(git show:*)
+  - Bash(git status:*)
+  - Bash(gh pr diff:*)
+  - Bash(gh pr view:*)
+  - Bash(gh pr checks:*)
+---
+
+# /review — team PR review
+
+You are reviewing the diff identified by `$ARGUMENTS` against this repository's conventions. Apply the path-scoped rules in `.claude/rules/` (they auto-load based on the files touched) and the shared standards in `.claude/standards/`.
+
+## Phase 1 — Interview pattern
+
+**Before reporting any findings, ask clarifying questions when intent is ambiguous.** It is cheaper for the reviewer to ask than for the author to argue with a confidently-wrong review.
+
+Trigger the interview pattern when any of these are true:
+
+- The diff adds or removes a dependency (`package.json` or `pyproject.toml` changes). Ask: *"What problem does this dependency solve that the existing stack does not?"*
+- The diff changes a public API response shape or a database column. Ask: *"Who consumes this? Are there clients that will break?"*
+- The diff is a refactor with no test changes. Ask: *"Was the behavior already covered by tests? If yes, point me at them. If no, should we add coverage in this PR?"*
+- The diff touches `src/api/` *and* `src/components/` *and* `src/db/` together. Ask: *"Is this one logical change, or three small PRs that landed together?"*
+
+If the author has already answered these in the PR description, acknowledge that and proceed without re-asking.
+
+## Phase 2 — Review criteria
+
+### Must report
+
+- **Bugs:** logic errors, off-by-one, null-deref risk, race conditions, missing `await`, unhandled rejections, wrong error code.
+- **Security:** raw SQL with user input, missing auth check on a new handler, secrets in code, `dangerouslySetInnerHTML` introduced, CORS broadened.
+- **Convention violations the path-scoped rules catch:** handler returning `{ status: 500 }` instead of throwing `ApiError`; component with `onClick` on a `div`; test using `setTimeout`; repository function used outside `src/db/`.
+- **Breaking changes** not flagged in the PR description.
+- **Migration safety:** any migration that adds NOT NULL without a default to a non-empty table.
+
+### Skip
+
+- Minor formatting (Prettier handles it).
+- Naming bikeshed when the existing name is fine ("rename `getCart` to `fetchCart`").
+- Personal stylistic preferences not encoded in `.claude/rules/` or `.claude/standards/`.
+- TODO/FIXME comments added with a tracked ticket reference — flag only if there's no ticket.
+- Test descriptions that could be clearer but are still accurate.
+
+The point of the skip list: false-positive reviews destroy author trust. If you wouldn't block on it, do not raise it.
+
+## Phase 3 — Bundling: interacting vs. independent findings
+
+**Interacting findings** (those that overlap or affect the same fix) → bundle into one detailed message with all context. Example: a missing `await` and a missing error handler on the same function are interacting — the fix changes both lines, the author needs to see both together.
+
+**Independent findings** (separate functions, separate files, no shared fix) → report sequentially as discrete items. Reporting independent issues one-at-a-time keeps each piece of feedback actionable and lets the author land fixes incrementally.
+
+Default heuristic: if fixing finding A changes the code that finding B references, they are interacting. Otherwise they are independent.
+
+## Phase 4 — Output format
+
+For each finding, produce:
+
+```
+[severity] path/to/file.ts:line
+finding: <one-sentence description>
+fix: <one-sentence recommendation>
+```
+
+Severity is `bug` | `security` | `convention` | `breaking`. End with a one-line verdict: `approve`, `comment`, or `request-changes`.
+
+## Examples
+
+### Example 1 — convention violation (independent)
+
+**Input:**
+```diff
+-export async function getOrder(id: string) {
+-  const order = await db.query("SELECT * FROM orders WHERE id = $1", [id]);
+-  if (!order) return { status: 404, body: null };
+-  return { status: 200, body: order };
+-}
++export async function getOrder(id: string) {
++  const order = await db.query("SELECT * FROM orders WHERE id = $1", [id]);
++  if (!order) return { status: 404, body: { error: "not found" } };
++  return { status: 200, body: order };
++}
+```
+
+**Output:**
+```
+[convention] src/api/orders/get.ts:3
+finding: handler returns a `{ status: 404 }` shape instead of throwing `ApiError(404, ...)`.
+fix: replace the `if (!order) return ...` with `if (!order) throw new ApiError(404, "NOT_FOUND", \`order ${id} not found\`);`
+[convention] src/api/orders/get.ts:2
+finding: handler calls `db.query` directly with raw SQL; this bypasses the repository layer and lets user input reach SQL composition.
+fix: call `ordersRepo.findById(id)` from `src/db/orders.ts` instead.
+verdict: request-changes
+```
+
+### Example 2 — interacting findings (bundle)
+
+**Input:**
+```diff
++export async function refundOrder(id: string, amount: number) {
++  const order = ordersRepo.findById(id);
++  const updated = ordersRepo.markRefunded(id);
++  paymentService.refund(order.paymentId, amount);
++  return { status: 200, body: updated };
++}
+```
+
+**Output:**
+```
+[bug] src/api/orders/refund.ts:2-4
+finding: three interacting issues on the same code path —
+  (1) `ordersRepo.findById` is not awaited; `order` is a Promise, so `order.paymentId` is undefined;
+  (2) `ordersRepo.markRefunded` is also not awaited;
+  (3) the three writes are not wrapped in `withTransaction`, so a paymentService failure leaves the DB marked-refunded while no money moved.
+fix: wrap the whole body in `await withTransaction(async (tx) => { ... })`, await each repo call, and order the writes so paymentService.refund runs *before* markRefunded.
+verdict: request-changes
+```
+
+These are bundled because the fix changes the same three lines and the author needs to see them together to understand the ordering constraint.
+
+## Notes
+
+- This command is project-scoped (`.claude/commands/review.md`) so everyone on the team gets the same review. If you want to layer personal preferences (e.g. a stricter accessibility check on your own PRs), put a `~/.claude/commands/review-strict.md` in your home directory — it will not affect teammates.
+- If a finding requires running code or modifying files to verify, ask the author to run a specific check rather than attempting it from the review session. This command's `allowed-tools` are read-only by design.
