@@ -13,31 +13,29 @@ Submission for the Harness Engineering capstone: four completed reference system
 
 ## Repository structure
 
-```
-.
-├── README.md                       ← you are here
-├── reflection-brief.md             ← evidence-grounded reflection brief
-├── system-1-claims-intake/
-│   ├── test-output.txt             ← pytest run (29 passed)
-│   ├── summary.md                  ← claim outcomes table
-│   └── traces/                     ← per-claim stop_reason traces
-├── system-2-retail-context/
-│   ├── test-output.txt             ← pytest run (30 passed)
-│   ├── budget.json                 ← token accounting / reduction %
-│   ├── context.md                  ← assembled context artifact
-│   ├── case_facts_call.json        ← structured case-facts extraction call
-│   ├── eval.jsonl                  ← evaluation results
-│   └── eval_control.jsonl          ← control (facts block stripped)
-├── system-3-ecommerce-config/
-│   ├── test-output.txt             ← pytest run (35 passed)
-│   ├── validator-output.txt        ← OK / exit 0
-│   └── claude-config/              ← .claude/ structure (rules, commands, skills) + root CLAUDE.md (@import hierarchy)
-└── system-4-shift-monitoring/
-    ├── test-output.txt             ← pytest run (33 passed)
-    ├── shift-output.txt            ← shift run log
-    ├── hot_state.json              ← bounded hot-tier state
-    └── shift_scratchpad.jsonl      ← append-only shift log
-```
+- [`README.md`](./README.md) — you are here
+- [`reflection-brief.md`](./reflection-brief.md) — evidence-grounded reflection brief
+- **`system-1-claims-intake/`**
+  - [`summary.md`](./system-1-claims-intake/summary.md) — claim outcomes table
+  - [`system1-tests.png`](./system-1-claims-intake/system1-tests.png) — pytest run (29 passed)
+  - [`traces_claim_02_stolen_bike.jsonl`](./system-1-claims-intake/traces_claim_02_stolen_bike.jsonl) — per-claim stop_reason trace
+- **`system-2-retail-context/`**
+  - [`budget.json`](./system-2-retail-context/budget.json) — token accounting / reduction %
+  - [`context.md`](./system-2-retail-context/context.md) — assembled context artifact
+  - [`case_facts_call.json`](./system-2-retail-context/case_facts_call.json) — structured case-facts extraction call
+  - [`eval.jsonl`](./system-2-retail-context/eval.jsonl) — evaluation results
+  - [`eval_control.jsonl`](./system-2-retail-context/eval_control.jsonl) — control (facts block stripped)
+  - [`system2-tests.png`](./system-2-retail-context/system2-tests.png) — pytest run (30 passed)
+- **`system-3-ecommerce-config/`**
+  - [`CLAUDE.md`](./system-3-ecommerce-config/CLAUDE.md) — root config, @import hierarchy
+  - [`claude_dir_structure.txt`](./system-3-ecommerce-config/claude_dir_structure.txt) — .claude/ structure (rules, commands, skills)
+  - [`system3-tests.png`](./system-3-ecommerce-config/system3-tests.png) — pytest run (35 passed)
+  - [`system3-validator-output.png`](./system-3-ecommerce-config/system3-validator-output.png) — OK / exit 0
+- **`system-4-shift-monitoring/`**
+  - [`hot_state.json`](./system-4-shift-monitoring/hot_state.json) — bounded hot-tier state
+  - [`shift_scratchpad.jsonl`](./system-4-shift-monitoring/shift_scratchpad.jsonl) — append-only shift log
+  - [`system4-output.png`](./system-4-shift-monitoring/system4-output.png) — shift run log
+  - [`system4-tests.png`](./system-4-shift-monitoring/system4-tests.png) — pytest run (33 passed)
 
 ## Reflection brief
 
