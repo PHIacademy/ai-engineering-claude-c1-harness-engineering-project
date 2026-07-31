@@ -24,6 +24,8 @@ Submission for the Harness Engineering capstone: four completed reference system
 ├── system-2-retail-context/
 │   ├── test-output.txt             ← pytest run (30 passed)
 │   ├── budget.json                 ← token accounting / reduction %
+│   ├── context.md                  ← assembled context artifact
+│   ├── case_facts_call.json        ← structured case-facts extraction call
 │   ├── eval.jsonl                  ← evaluation results
 │   └── eval_control.jsonl          ← control (facts block stripped)
 ├── system-3-ecommerce-config/
