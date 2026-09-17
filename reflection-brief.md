@@ -67,8 +67,6 @@
 
 ## Part 2 — Synthesis
 
-*Graded on connecting two or more systems. Cite a named file/artifact from each.*
-
 14. **Three layers.**
     → **Model:** the reasoning that lands in `classify_claim`'s `rationale` field in `claim_02_stolen_bike.jsonl` turn 3 ("The claimant explicitly reports a bike stolen without permission...") — free-text judgment the model produces, not code.
     → **Harness:** `loop.py`'s `run()` function, which enforces `stop_reason`-driven control deterministically (`test_stop_reason_is_loop_control` in `test_antipatterns.py`) and `tools.py`'s structured error contract (`is_error`/`error_category`/`is_retryable`).
